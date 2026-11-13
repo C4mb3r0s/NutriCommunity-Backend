@@ -75,4 +75,6 @@ volumes:
 networks:
   # Private network shared by PostgreSQL, migrations, and the backend.
   backend_network:
+    # Stable name shared with the frontend Compose project.
+    name: nutricommunity_network
     driver: bridge
