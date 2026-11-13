@@ -1,0 +1,18 @@
+# Dependencias locales; se instalarán dentro de la imagen.
+node_modules
+
+# Código compilado localmente.
+dist
+
+# Secretos y variables de entorno locales.
+.env
+.env.*
+!.env.example
+
+# Archivos de Git.
+.git
+.gitignore
+
+# Logs y resultados de pruebas.
+*.log
+coverage
