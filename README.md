@@ -633,7 +633,7 @@ Respuesta: usuario actualizado sin incluir `passwordHash`.
 - pnpm.
 - PostgreSQL 16.
 - Drizzle ORM y Drizzle Kit.
-- JWT y Argon2.
+- JWT y bcrypt.
 - Zod, Helmet, CORS y rate limiting.
 - ESLint con Standard.
 - Jest y Supertest.
@@ -668,14 +668,14 @@ cd nutricommunity_backend
 pnpm install
 ```
 
-Si pnpm bloquea el build nativo de Argon2:
+Si pnpm bloquea el build nativo de bcrypt:
 
 ```bash
-pnpm approve-builds argon2
-pnpm rebuild argon2
+pnpm approve-builds bcrypt
+pnpm rebuild bcrypt
 ```
 
-El selector interactivo debe incluir únicamente `argon2`.
+El selector interactivo debe incluir únicamente `bcrypt`.
 
 ## Variables de entorno
 

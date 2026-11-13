@@ -1,4 +1,4 @@
 allowBuilds:
   '@parcel/watcher': false
-  argon2: true
+  bcrypt: true
   esbuild: false
