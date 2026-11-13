@@ -22,7 +22,7 @@ export const detail = async (
   const { postId } = postIdSchema.parse(request.params)
   const post = await postService.findById(postId)
 
-  if (!post || post.status === 'deleted') {
+  if (!post || post.status !== 'published') {
     response.status(404).json({ message: 'Post not found' })
     return
   }
@@ -50,6 +50,24 @@ export const update = async (
 ): Promise<void> => {
   const { postId } = postIdSchema.parse(request.params)
   const input = updatePostSchema.parse(request.body)
+  const user = request.user
+
+  if (!user) {
+    response.status(401).json({ message: 'Authentication required' })
+    return
+  }
+
+  const canManage = await postService.canManage(
+    postId,
+    user.id,
+    user.roles.includes('admin')
+  )
+
+  if (!canManage) {
+    response.status(403).json({ message: 'Insufficient permissions' })
+    return
+  }
+
   const post = await postService.update(postId, input)
 
   if (!post) {
@@ -65,6 +83,24 @@ export const remove = async (
   response: Response
 ): Promise<void> => {
   const { postId } = postIdSchema.parse(request.params)
+  const user = request.user
+
+  if (!user) {
+    response.status(401).json({ message: 'Authentication required' })
+    return
+  }
+
+  const canManage = await postService.canManage(
+    postId,
+    user.id,
+    user.roles.includes('admin')
+  )
+
+  if (!canManage) {
+    response.status(403).json({ message: 'Insufficient permissions' })
+    return
+  }
+
   const post = await postService.softDelete(postId)
 
   if (!post) {

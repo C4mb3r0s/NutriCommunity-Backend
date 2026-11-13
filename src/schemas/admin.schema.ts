@@ -5,7 +5,7 @@ export const adminuserParamsSchema = z.object({
 })
 
 export const updateUserStatusSchema = z.object({
-  status: z.enum(['active', 'suspend', 'deleted'])
+  status: z.enum(['active', 'suspended', 'deleted'])
 })
 
 export const paginationSchema = z.object({

@@ -13,7 +13,7 @@ export const listUsers = async (page: number, limit: number) => {
       secondLastName: users.secondLastName,
       email: users.email,
       status: users.status,
-      createAt: users.createdAt
+      createdAt: users.createdAt
     })
     .from(users)
     .limit(limit)

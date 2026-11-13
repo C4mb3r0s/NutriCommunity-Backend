@@ -2,7 +2,7 @@ import type { Request, Response } from 'express'
 import {
   reactionParamsSchema,
   reactionSchema
-} from '../schemas/reaction.scheme.js'
+} from '../schemas/reaction.schema.js'
 import * as reactionService from '../services/reaction.service.js'
 
 export const toggle = async (
@@ -13,7 +13,7 @@ export const toggle = async (
   const { type } = reactionSchema.parse(request.body)
 
   if (!request.user) {
-    response.status(401).json({ message: 'Authentication requiered' })
+    response.status(401).json({ message: 'Authentication required' })
     return
   }
 
@@ -25,7 +25,7 @@ export const toggle = async (
 
   if (reaction === null) {
     response.status(200).json({ postId, userId: request.user.id, type: null })
-    null
+    return
   }
 
   response.json(reaction)

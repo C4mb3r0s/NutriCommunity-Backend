@@ -38,11 +38,22 @@ export const create = async (
   return comment
 }
 
-export const softDelete = async (commentId: string) => {
+export const softDelete = async (
+  commentId: string,
+  userId: string,
+  isAdmin: boolean
+) => {
+  const ownershipCondition = isAdmin
+    ? eq(comments.id, commentId)
+    : and(
+      eq(comments.id, commentId),
+      eq(comments.userId, userId)
+    )
+
   const [comment] = await db
     .update(comments)
     .set({ status: 'deleted', updatedAt: new Date() })
-    .where(eq(comments.id, commentId))
+    .where(ownershipCondition)
     .returning()
 
   return comment

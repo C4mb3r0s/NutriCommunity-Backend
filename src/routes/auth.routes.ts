@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import * as authController from '../controllers/auth.controller.js'
-import { authenticate } from '../middlewares/autenticate.js'
+import { authenticate } from '../middlewares/authenticate.js'
 import { requireCsrf } from '../middlewares/csrf.js'
 
 const router: Router = Router()

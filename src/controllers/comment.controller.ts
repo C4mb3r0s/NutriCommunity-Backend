@@ -1,4 +1,4 @@
-import { request, type Request, type Response } from 'express'
+import type { Request, Response } from 'express'
 import {
   commentIdSchema,
   commentParamsSchema,
@@ -41,12 +41,23 @@ export const remove = async (
   response: Response
 ): Promise<void> => {
   const { commentId } = commentIdSchema.parse(request.params)
-  const comment = await commentService.softDelete(commentId)
+  const user = request.user
+
+  if (!user) {
+    response.status(401).json({ message: 'Authentication required' })
+    return
+  }
+
+  const comment = await commentService.softDelete(
+    commentId,
+    user.id,
+    user.roles.includes('admin')
+  )
 
   if (!comment) {
     response.status(404).json({ message: 'Comment not found' })
+    return
   }
 
   response.status(204).send()
-
 }
