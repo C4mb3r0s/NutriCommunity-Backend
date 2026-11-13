@@ -712,18 +712,26 @@ Desde el host, la conexión requiere `localhost:5433`; el nombre `db` solo se re
 
 Los comandos de esta sección se ejecutan desde `nutricommunity_backend`.
 
-Construir imágenes y crear contenedores detenidos:
+Construir imágenes, recrear los contenedores e iniciar el entorno completo:
 
 ```bash
 pnpm run compile
 ```
 
-Este comando ejecuta `docker compose build` y `docker compose create`; no inicia contenedores ni ejecuta migraciones.
+Este comando reconstruye las imágenes, recrea los contenedores e inicia PostgreSQL, migraciones y backend en segundo plano.
 
-Iniciar el entorno completo:
+El contenedor `migrate` espera a que PostgreSQL esté saludable, ejecuta `pnpm db:migrate` y termina con código `0`. Si no hay migraciones pendientes, termina correctamente sin cambios. El backend inicia después de que `migrate` termina correctamente.
+
+Iniciar manualmente el entorno completo:
 
 ```bash
 docker compose up
+```
+
+Para volver a comprobar y aplicar migraciones después de cambiar el código o agregar una migración, usa:
+
+```bash
+pnpm run compile
 ```
 
 El flujo es:
@@ -754,7 +762,6 @@ Al modificar un schema:
 ```bash
 pnpm db:generate
 pnpm run compile
-docker compose up
 ```
 
 `db:generate` crea el SQL y `migrate` lo aplica. Las migraciones de `src/db/migrations/` deben subirse al repositorio.
@@ -809,7 +816,7 @@ Después de migrar, abre `public` y la pestaña `Diagram` para ver las tablas y 
 | `pnpm dev` | Desarrollo con recarga automática |
 | `pnpm build` | Compila TypeScript a `dist/` |
 | `pnpm start` | Ejecuta la compilación |
-| `pnpm run compile` | Construye imágenes y crea contenedores detenidos |
+| `pnpm run compile` | Construye, recrea e inicia los contenedores y ejecuta las migraciones |
 | `pnpm typecheck` | Valida TypeScript |
 | `pnpm lint` | Ejecuta ESLint |
 | `pnpm lint:fix` | Corrige problemas compatibles |

@@ -28,6 +28,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: nutricommunity-migrate
+    # Run once per `docker compose up` and remain stopped after success.
+    restart: "no"
     command: pnpm db:migrate
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
