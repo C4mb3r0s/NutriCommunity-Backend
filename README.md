@@ -693,10 +693,24 @@ PORT=3000
 POSTGRES_DB=nutricommunity
 POSTGRES_USER=nutricommunity_user
 POSTGRES_PASSWORD=cambia_esta_contraseña
+
 JWT_SECRET=genera_un_secreto_largo_y_aleatorio
-JWT_EXPIRES_IN=30m
+JWT_EXPIRES_IN=15m
+REFRESH_TOKEN_HMAC_SECRET=genera_otro_secreto_largo_y_aleatorio
+REFRESH_TOKEN_EXPIRES_IN=7d
+CSRF_SECRET=genera_un_tercer_secreto_largo_y_aleatorio
+
 FRONTEND_URL=http://localhost:5173
 ```
+
+Para generar secretos seguros, ejecuta el siguiente comando una vez por cada variable
+(`JWT_SECRET`, `REFRESH_TOKEN_HMAC_SECRET` y `CSRF_SECRET`):
+
+```bash
+openssl rand -hex 32
+```
+
+Cada variable debe utilizar un valor diferente. No compartas estos valores ni los subas al repositorio.
 
 `DATABASE_URL` no es necesaria para `docker compose up`: Compose la construye internamente para `backend` y `migrate` usando `db:5432`.
 
