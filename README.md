@@ -2,7 +2,7 @@
 
 Plataforma web para una comunidad de recetas y hábitos de alimentación administrada por un nutriólogo.
 
-> Alcance documentado: backend base, PostgreSQL, migraciones de Drizzle y schemas iniciales.
+> Alcance actual: MVP de autenticación, publicaciones, comentarios, reacciones y administración básica de usuarios.
 
 ## Arquitectura
 
@@ -26,9 +26,9 @@ Dentro de Docker el backend usa `db:5432`. Desde el host se utiliza `localhost:5
 
 ## Base de datos y relaciones
 
-Actualmente el esquema de Drizzle contempla 17 tablas. Las claves primarias y foráneas utilizan `uuid`; los valores `smallint` se reservan para cantidades, minutos y ordenamientos.
+Actualmente el esquema de Drizzle contempla 18 tablas. Ocho son utilizadas por el MVP y diez están preparadas para funcionalidades futuras. Las claves primarias y foráneas utilizan `uuid`; los valores `smallint` se reservan para cantidades, minutos y ordenamientos.
 
-> La ruta `/health` está disponible en la base inicial. Las rutas restantes forman parte del contrato de los módulos del sistema.
+> Todas las rutas descritas en la sección de endpoints están implementadas actualmente.
 
 <details>
 <summary>Ver tablas y responsabilidades</summary>
@@ -38,6 +38,7 @@ Actualmente el esquema de Drizzle contempla 17 tablas. Las claves primarias y fo
 | `users` | Usuarios, credenciales y estado | 1:N con `posts`, `comments`, `reactions`, `audit_logs`; N:N con `roles` y `tags` |
 | `roles` | Roles del sistema | N:N con `users` mediante `user_roles` |
 | `user_roles` | Asignación de roles | Une `users` con `roles` |
+| `refresh_sessions` | Sesiones y refresh tokens hasheados | N:1 con `users` |
 | `content_types` | Tipos de publicación | 1:N con `posts` |
 | `posts` | Publicaciones y recetas | Pertenece a `users` y `content_types` |
 | `recipe_details` | Porciones y tiempos | 1:1 con `posts` |
@@ -261,19 +262,20 @@ docs/yaak/nutricommunity-local.postman_environment.json
 
 Para importarlos en Yaak:
 
-1. Abre `Import Data` y selecciona la colección JSON.
-2. Importa el archivo de entorno en el mismo workspace.
-3. Activa `NutriCommunity - Local`.
-4. Inicia el backend con `pnpm dev` o `pnpm run compile`.
-5. Ejecuta `Register participant` o configura las credenciales del usuario administrador en `Login`.
-6. Copia el `accessToken` de la respuesta de login en la variable `access_token`.
-7. Copia el valor de la cookie `csrf_token` en la variable `csrf_token`.
+1. Importa `nutricommunity-auth.postman_collection.json`.
+2. Importa `nutricommunity-mvp.postman_collection.json`.
+3. Importa el archivo de entorno en el mismo workspace.
+4. Activa `NutriCommunity - Local`.
+5. Inicia el backend con `pnpm dev` o `pnpm run compile`.
+6. Ejecuta `Register participant` o configura las credenciales del usuario administrador en `Login`.
+7. Copia el `accessToken` de la respuesta de login en la variable `access_token`.
+8. Copia el valor de la cookie `csrf_token` en la variable `csrf_token`.
 
 La cookie `refresh_token` debe conservarse en el cookie jar de Yaak. Las solicitudes `Refresh token` y `Logout` requieren también el header `X-CSRF-Token`.
 
 ### Rutas activas del MVP
 
-La implementación inicial tendrá únicamente estas rutas:
+Actualmente están implementadas estas rutas:
 
 | Método | Ruta | Acceso |
 |---|---|---|
@@ -284,11 +286,11 @@ La implementación inicial tendrá únicamente estas rutas:
 | POST | /api/auth/refresh | Refresh token + CSRF |
 | POST | /api/auth/logout | JWT + CSRF |
 | GET | /api/posts | Público |
-| GET | /api/posts/:postId | Público o propietario |
+| GET | /api/posts/:postId | Público; solo publicaciones `published` |
 | POST | /api/posts | Usuario autenticado + CSRF |
 | PATCH | /api/posts/:postId | Autor/admin + CSRF |
 | DELETE | /api/posts/:postId | Autor/admin + CSRF |
-| GET | /api/posts/:postId/comments | Público |
+| GET | /api/post/:postId/comments | Público |
 | POST | /api/posts/:postId/comments | Usuario autenticado + CSRF |
 | DELETE | /api/comments/:commentId | Autor/admin + CSRF |
 | PUT | /api/posts/:postId/reaction | Usuario autenticado + CSRF |
@@ -301,21 +303,29 @@ El plan detallado de implementación está en:
 ../plan-rutas-mvp.md
 ```
 
-Las rutas avanzadas de preferencias, dashboard, tags, catálogos, moderación y gestión separada de estados quedan pospuestas para una segunda etapa.
+Las tablas de recetas, ingredientes, nutrición, tags, preferencias y auditoría están preparadas para una segunda etapa, pero todavía no tienen endpoints implementados.
 
+## Dependencias de producción
 
+- Express 5.
+- CORS.
+- Helmet.
+- Express Rate Limit.
+- Dotenv.
+- Zod.
+- JSON Web Token.
+- Bcrypt.
+- Drizzle ORM.
+- Postgres.
+
+## Herramientas necesarias
 
 - Node.js y TypeScript.
-- Express 5.
 - pnpm.
-- PostgreSQL 16.
-- Drizzle ORM y Drizzle Kit.
-- JWT y bcrypt.
-- Zod, Helmet, CORS y rate limiting.
-- ESLint con Standard.
-- Jest y Supertest.
+- PostgreSQL 16 mediante Docker.
 - Docker Engine y Docker Compose V2.
 - DBeaver, opcional para inspeccionar PostgreSQL.
+- Yaak, opcional para probar la API.
 
 ## Instalación
 
@@ -529,19 +539,60 @@ Reemplaza `REPLACE_WITH_A_STRONG_PASSWORD` antes de ejecutarlo.
 
 ```text
 nutricommunity_backend/
+├── docs/
+│   ├── sql/
+│   │   └── create-admin.sql
+│   └── yaak/
+│       ├── nutricommunity-auth.postman_collection.json
+│       ├── nutricommunity-local.postman_environment.json
+│       └── nutricommunity-mvp.postman_collection.json
+├── docker/
+│   └── postgres/
+│       └── init/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── drizzle.config.ts
 ├── eslint.config.js
 ├── package.json
 ├── pnpm-lock.yaml
-├── pnpm-workspace.yaml
 ├── src/
+│   ├── controllers/
+│   │   ├── admin.controller.ts
+│   │   ├── auth.controller.ts
+│   │   ├── comment.controller.ts
+│   │   ├── post.controller.ts
+│   │   └── reaction.controller.ts
 │   ├── db/
 │   │   ├── index.ts
 │   │   ├── migrations/
 │   │   ├── schema/
 │   │   └── seed.ts
+│   ├── middlewares/
+│   │   ├── authenticate.ts
+│   │   ├── authorize.ts
+│   │   ├── cookies.ts
+│   │   └── csrf.ts
+│   ├── routes/
+│   │   ├── admin.routes.ts
+│   │   ├── auth.routes.ts
+│   │   ├── comment.routes.ts
+│   │   └── post.routes.ts
+│   ├── schemas/
+│   │   ├── admin.schema.ts
+│   │   ├── auth.schema.ts
+│   │   ├── comment.schema.ts
+│   │   ├── post.schema.ts
+│   │   └── reaction.schema.ts
+│   ├── services/
+│   │   ├── admin.service.ts
+│   │   ├── auth.service.ts
+│   │   ├── comment.service.ts
+│   │   ├── post.service.ts
+│   │   ├── reaction.service.ts
+│   │   └── token.service.ts
+│   ├── types/
+│   │   ├── bcrypt.d.ts
+│   │   └── express.d.ts
 │   └── server.ts
 └── tsconfig.json
 ```
