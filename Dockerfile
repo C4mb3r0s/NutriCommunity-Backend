@@ -20,7 +20,7 @@ COPY . .
 RUN pnpm build
 
 # Internal Express port.
-EXPOSE 3000
+EXPOSE 4000
 
 # Default command for the API container.
 CMD ["pnpm", "start"]

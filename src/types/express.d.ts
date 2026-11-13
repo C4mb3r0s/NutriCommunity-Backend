@@ -7,6 +7,7 @@ declare global {
         id: string
         roles: string[]
       }
+      cookies: Record<string, string | undefined>
     }
   }
 }

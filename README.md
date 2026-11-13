@@ -20,7 +20,7 @@ NutriCommunity/
 |---|---|---|
 | `db` | PostgreSQL | `localhost:5433` desde el host |
 | `migrate` | Ejecuta migraciones | Solo dentro de Docker |
-| `backend` | API Express | `http://localhost:8080` |
+| `backend` | API Express | `http://localhost:3000` |
 
 Dentro de Docker el backend usa `db:5432`. Desde el host se utiliza `localhost:5433`.
 
@@ -144,7 +144,10 @@ Request:
 
 ```json
 {
-  "name": "Ana López",
+  "firstName": "Ana",
+  "secondName": "María",
+  "lastName": "López",
+  "secondLastName": "García",
   "email": "ana@example.com",
   "password": "UnaClaveSegura123!"
 }
@@ -156,11 +159,13 @@ Respuesta `201 Created`:
 {
   "user": {
     "id": "uuid",
-    "name": "Ana López",
+    "firstName": "Ana",
+    "secondName": "María",
+    "lastName": "López",
+    "secondLastName": "García",
     "email": "ana@example.com",
     "roles": ["participant"]
-  },
-  "accessToken": "jwt"
+  }
 }
 ```
 
@@ -188,12 +193,14 @@ Respuesta `200 OK`:
 {
   "user": {
     "id": "uuid",
-    "name": "Ana López",
+    "firstName": "Ana",
+    "secondName": "María",
+    "lastName": "López",
+    "secondLastName": "García",
     "email": "ana@example.com",
     "roles": ["participant"]
   },
-  "accessToken": "jwt",
-  "expiresIn": "30m"
+  "accessToken": "jwt"
 }
 ```
 
@@ -208,11 +215,16 @@ Respuesta `200 OK`:
 
 ```json
 {
-  "id": "uuid",
-  "name": "Ana López",
-  "email": "ana@example.com",
-  "roles": ["participant"],
-  "status": "active"
+  "user": {
+    "id": "uuid",
+    "firstName": "Ana",
+    "secondName": "María",
+    "lastName": "López",
+    "secondLastName": "García",
+    "email": "ana@example.com",
+    "roles": ["participant"],
+    "status": "active"
+  }
 }
 ```
 
@@ -232,6 +244,32 @@ Respuesta `204 No Content` o:
 ```
 
 </details>
+
+### Yaak
+
+La colección de autenticación se encuentra en:
+
+```text
+docs/yaak/nutricommunity-auth.postman_collection.json
+```
+
+El entorno local se encuentra en:
+
+```text
+docs/yaak/nutricommunity-local.postman_environment.json
+```
+
+Para importarlos en Yaak:
+
+1. Abre `Import Data` y selecciona la colección JSON.
+2. Importa el archivo de entorno en el mismo workspace.
+3. Activa `NutriCommunity - Local`.
+4. Inicia el backend con `pnpm dev` o `pnpm run compile`.
+5. Ejecuta `Register participant` o configura las credenciales del usuario administrador en `Login`.
+6. Copia el `accessToken` de la respuesta de login en la variable `access_token`.
+7. Copia el valor de la cookie `csrf_token` en la variable `csrf_token`.
+
+La cookie `refresh_token` debe conservarse en el cookie jar de Yaak. Las solicitudes `Refresh token` y `Logout` requieren también el header `X-CSRF-Token`.
 
 ### Publicaciones
 
@@ -270,7 +308,8 @@ Respuesta `200 OK`:
       },
       "author": {
         "id": "uuid",
-        "name": "Nutriólogo"
+        "firstName": "Ana",
+        "lastName": "López"
       },
       "tags": [],
       "publishedAt": "2026-11-12T12:00:00.000Z"
@@ -303,7 +342,8 @@ Respuesta `200 OK`:
   "contentType": "recipe",
   "author": {
     "id": "uuid",
-    "name": "Nutriólogo"
+    "firstName": "Ana",
+    "lastName": "López"
   },
   "recipe": {
     "servings": 2,
@@ -516,7 +556,10 @@ Respuesta `200 OK`:
       "body": "La receta quedó muy bien.",
       "author": {
         "id": "uuid",
-        "name": "Ana López"
+        "firstName": "Ana",
+        "secondName": "María",
+        "lastName": "López",
+        "secondLastName": "García"
       },
       "createdAt": "2026-11-12T12:00:00.000Z"
     }
@@ -822,6 +865,14 @@ Password: el valor de POSTGRES_PASSWORD
 ```
 
 Después de migrar, abre `public` y la pestaña `Diagram` para ver las tablas y sus relaciones.
+
+Para crear el usuario administrador desde DBeaver, utiliza el script:
+
+```text
+docs/sql/create-admin.sql
+```
+
+Reemplaza `REPLACE_WITH_A_STRONG_PASSWORD` antes de ejecutarlo.
 
 ## Comandos del backend
 

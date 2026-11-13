@@ -22,6 +22,13 @@
       "when": 1794589963084,
       "tag": "0002_illegal_matthew_murdock",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794595588320,
+      "tag": "0003_charming_warstar",
+      "breakpoints": true
     }
   ]
 }

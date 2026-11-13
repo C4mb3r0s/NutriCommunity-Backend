@@ -13,9 +13,21 @@ export const users = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
 
-    name: varchar('name', {
-      length: 120
+    firstName: varchar('first_name', {
+      length: 80
     }).notNull(),
+
+    secondName: varchar('second_name', {
+      length: 80
+    }),
+
+    lastName: varchar('last_name', {
+      length: 80
+    }).notNull(),
+
+    secondLastName: varchar('second_last_name', {
+      length: 80
+    }),
 
     email: varchar('email', {
       length: 255

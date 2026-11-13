@@ -32,9 +32,9 @@ export const refreshSessions = pgTable(
       withTimezone: true
     }),
 
-    replaceBy: uuid('replace_by'),
+    replacedBy: uuid('replace_by'),
 
-    userAgent: varchar('ip_address', {
+    ipAddress: varchar('ip_address', {
       length: 45
     }),
 
