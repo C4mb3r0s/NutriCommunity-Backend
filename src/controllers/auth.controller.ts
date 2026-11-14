@@ -16,7 +16,7 @@ const csrfCookieOptions = {
   httpOnly: false,
   secure: isProduction,
   sameSite: 'lax' as const,
-  path: '/api'
+  path: '/'
 }
 
 const handleError = (error: unknown, response: Response): void => {
