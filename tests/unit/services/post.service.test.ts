@@ -12,7 +12,27 @@ jest.unstable_mockModule('../../../src/db/schema/posts.js', () => ({
     id: 'posts.id',
     status: 'posts.status',
     publishedAt: 'posts.publishedAt',
-    authorId: 'posts.authorId'
+    authorId: 'posts.authorId',
+    contentTypeId: 'posts.contentTypeId',
+    title: 'posts.title',
+    description: 'posts.description',
+    createdAt: 'posts.createdAt',
+    updatedAt: 'posts.updatedAt'
+  }
+}))
+jest.unstable_mockModule('../../../src/db/schema/users.js', () => ({
+  users: {
+    id: 'users.id',
+    firstName: 'users.firstName',
+    secondName: 'users.secondName',
+    lastName: 'users.lastName',
+    secondLastName: 'users.secondLastName'
+  }
+}))
+jest.unstable_mockModule('../../../src/db/schema/content-types.js', () => ({
+  contentTypes: {
+    id: 'contentTypes.id',
+    name: 'contentTypes.name'
   }
 }))
 jest.unstable_mockModule('drizzle-orm', () => ({
@@ -26,6 +46,7 @@ const postService = await import('../../../src/services/post.service.js')
 const queryChain = (result: unknown[]) => {
   const chain = {
     from: jest.fn(),
+    innerJoin: jest.fn(),
     where: jest.fn(),
     orderBy: jest.fn(),
     limit: jest.fn(),
@@ -33,6 +54,7 @@ const queryChain = (result: unknown[]) => {
   }
 
   chain.from.mockReturnValue(chain)
+  chain.innerJoin.mockReturnValue(chain)
   chain.where.mockReturnValue(chain)
   chain.orderBy.mockReturnValue(chain)
   chain.limit.mockReturnValue(chain)
@@ -52,12 +74,43 @@ describe('post service', () => {
     jest.clearAllMocks()
   })
 
+  const postRow = {
+    id: 'post-id',
+    authorId: 'author-id',
+    contentTypeId: 'type-id',
+    title: 'Recipe',
+    description: 'Recipe content',
+    status: 'published',
+    publishedAt: new Date('2026-01-01T00:00:00.000Z'),
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    authorFirstName: 'Eduardo',
+    authorSecondName: null,
+    authorLastName: 'Camberos',
+    authorSecondLastName: null,
+    contentTypeName: 'Receta'
+  }
+
+  const postView = {
+    id: 'post-id',
+    authorId: 'author-id',
+    authorName: 'Eduardo Camberos',
+    contentTypeId: 'type-id',
+    contentTypeName: 'Receta',
+    title: 'Recipe',
+    content: 'Recipe content',
+    status: 'published',
+    publishedAt: postRow.publishedAt,
+    createdAt: postRow.createdAt,
+    updatedAt: postRow.updatedAt
+  }
+
   it('lists published posts with pagination', async () => {
-    const posts = [{ id: 'post-id', status: 'published' }]
+    const posts = [postRow]
     select.mockReturnValueOnce(queryChain(posts))
 
     await expect(postService.listPublished(2, 10)).resolves.toEqual({
-      data: posts,
+      data: [postView],
       pagination: { page: 2, limit: 10, total: 1, totalPages: 2 }
     })
   })
@@ -72,9 +125,8 @@ describe('post service', () => {
   })
 
   it('finds a post or returns undefined', async () => {
-    const post = { id: 'post-id', status: 'published' }
-    select.mockReturnValueOnce(singleQueryChain([post]))
-    await expect(postService.findById('post-id')).resolves.toEqual(post)
+    select.mockReturnValueOnce(singleQueryChain([postRow]))
+    await expect(postService.findById('post-id')).resolves.toEqual(postView)
 
     select.mockReturnValueOnce(singleQueryChain([]))
     await expect(postService.findById('missing')).resolves.toBeUndefined()
