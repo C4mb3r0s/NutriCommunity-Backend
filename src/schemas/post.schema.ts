@@ -7,7 +7,8 @@ export const postIdSchema = z.object({
 export const createPostSchema = z.object({
   title: z.string().trim().min(3).max(180),
   description: z.string().trim().max(2000).nullish(),
-  contentTypeId: z.uuid()
+  contentTypeId: z.uuid(),
+  status: z.enum(['draft', 'published']).default('draft')
 })
 
 export const updatePostSchema = z.object({

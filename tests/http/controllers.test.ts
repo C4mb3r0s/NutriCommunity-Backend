@@ -35,12 +35,16 @@ const commentService = {
 const reactionService = {
   toggle: jest.fn()
 }
+const contentTypeService = {
+  list: jest.fn()
+}
 
 jest.unstable_mockModule('../../src/services/auth.service.js', () => authService)
 jest.unstable_mockModule('../../src/services/admin.service.js', () => adminService)
 jest.unstable_mockModule('../../src/services/post.service.js', () => postService)
 jest.unstable_mockModule('../../src/services/comment.service.js', () => commentService)
 jest.unstable_mockModule('../../src/services/reaction.service.js', () => reactionService)
+jest.unstable_mockModule('../../src/services/content-type.service.js', () => contentTypeService)
 
 const authController = await import('../../src/controllers/auth.controller.js')
 const adminController = await import('../../src/controllers/admin.controller.js')

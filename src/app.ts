@@ -6,6 +6,7 @@ import { parseCookies } from './middlewares/cookies.js'
 import adminRoutes from './routes/admin.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import commentRoutes from './routes/comment.routes.js'
+import contentTypeRoutes from './routes/content-type.routes.js'
 import postRoutes from './routes/post.routes.js'
 
 const app: Express = express()
@@ -27,6 +28,7 @@ app.get('/health', (_request, response) => {
 
 app.use('/api/auth', authRoutes)
 app.use('/api/posts', postRoutes)
+app.use('/api/content-types', contentTypeRoutes)
 app.use('/api', commentRoutes)
 app.use('/api/admin', adminRoutes)
 

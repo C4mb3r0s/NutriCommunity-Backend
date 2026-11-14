@@ -42,13 +42,16 @@ export const create = async (
   input: CreatePostInput,
   authorId: string
 ) => {
+  const status = input.status ?? 'draft'
+
   const [post] = await db
     .insert(posts)
     .values({
       ...input,
       authorId,
       description: input.description ?? null,
-      status: 'draft'
+      status,
+      publishedAt: status === 'published' ? new Date() : null
     })
     .returning()
 
