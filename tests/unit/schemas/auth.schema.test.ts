@@ -1,7 +1,7 @@
 import {
   loginSchema,
   registerSchema
-} from '../src/schemas/auth.schema.js'
+} from '../../../src/schemas/auth.schema.js'
 
 const baseRegistration = {
   firstName: 'Eduardo',
@@ -18,7 +18,7 @@ const invalidPasswords: Array<[string, string]> = [
   ['only a space as special character', 'NutriPass1 ']
 ]
 
-describe('password validation', () => {
+describe('auth schemas', () => {
   it('accepts a password with the required complexity', () => {
     const result = registerSchema.safeParse({
       ...baseRegistration,
@@ -47,5 +47,16 @@ describe('password validation', () => {
     })
 
     expect(result.success).toBe(true)
+  })
+
+  it('rejects malformed registration data', () => {
+    const result = registerSchema.safeParse({
+      ...baseRegistration,
+      firstName: 'E',
+      email: 'not-an-email',
+      password: 'NutriPass1!'
+    })
+
+    expect(result.success).toBe(false)
   })
 })
