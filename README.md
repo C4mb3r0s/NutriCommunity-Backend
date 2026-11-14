@@ -1,8 +1,29 @@
-# NutriCommunity
+# NutriCommunity Backend
 
-Plataforma web para una comunidad de recetas y hábitos de alimentación administrada por un nutriólogo.
+API REST para NutriCommunity, una plataforma de recetas y hábitos de alimentación administrada por un profesional de la nutrición.
 
-> Alcance actual: MVP de autenticación, publicaciones, comentarios, reacciones y administración básica de usuarios.
+El backend proporciona autenticación segura, publicaciones, comentarios, reacciones y administración básica de usuarios. Actualmente se encuentra en la etapa MVP.
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white" alt="Express" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Drizzle%20ORM-0.45-C5F74F?logo=drizzle&logoColor=111827" alt="Drizzle ORM" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose" />
+  <img src="https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white" alt="pnpm" />
+  <img src="https://img.shields.io/badge/Jest-Testing-C21325?logo=jest&logoColor=white" alt="Jest" />
+  <img src="https://img.shields.io/badge/ESLint-Standard-4B32C3?logo=eslint&logoColor=white" alt="ESLint" />
+</p>
+
+## Navegación
+
+- [Arquitectura](#arquitectura)
+- [Contrato de la API](#contrato-de-la-api)
+- [Pruebas con Yaak y Postman](#pruebas-con-yaak-y-postman)
+- [Instalación](#instalación)
+- [Docker](#docker)
+- [Comandos del backend](#comandos-del-backend)
 
 ## Arquitectura
 
@@ -137,9 +158,9 @@ Respuesta `200 OK`:
 ### Autenticación
 
 <details>
-<summary><code>POST /api/auth/register</code> — registrar participante</summary>
+<summary><code>POST /api/admin/users</code> — registrar usuario</summary>
 
-Acceso: público.
+Acceso: administrador autenticado y CSRF.
 
 Request:
 
@@ -170,7 +191,7 @@ Respuesta `201 Created`:
 }
 ```
 
-La respuesta excluye `password_hash`.
+La respuesta excluye `password_hash`. Los participantes deben registrarse desde el dashboard del administrador; esta ruta no es pública.
 
 </details>
 
@@ -234,7 +255,7 @@ Respuesta `200 OK`:
 <details>
 <summary><code>POST /api/auth/logout</code> — cerrar sesión</summary>
 
-Acceso: JWT requerido.
+Acceso: JWT y CSRF requeridos. La sesión se revoca en `refresh_sessions` y se limpian las cookies.
 
 Respuesta `204 No Content` o:
 
@@ -246,32 +267,88 @@ Respuesta `204 No Content` o:
 
 </details>
 
-### Yaak
+<details>
+<summary><code>POST /api/auth/refresh</code> — renovar sesión</summary>
 
-La colección de autenticación se encuentra en:
+Acceso: cookie `refresh_token` y header `X-CSRF-Token`.
+
+El endpoint valida el refresh token, revoca la sesión anterior, crea una nueva sesión y devuelve un access token nuevo. También actualiza las cookies `refresh_token` y `csrf_token`.
+
+Respuesta `200 OK`:
+
+```json
+{
+  "accessToken": "new-jwt"
+}
+```
+
+</details>
+
+### Administración de tokens
+
+El access token es un JWT firmado con `JWT_SECRET` y dura por defecto `15m`. Se envía en el header `Authorization` y no se almacena en la base de datos.
+
+El refresh token se firma con `REFRESH_TOKEN_HMAC_SECRET`, dura por defecto `7d` y se guarda en la cookie `httpOnly` `refresh_token`. En PostgreSQL solo se conserva su hash en `refresh_sessions`, junto con el `jti`, usuario, expiración y estado de revocación.
+
+Cuando el access token expira, el frontend llama automáticamente a `/api/auth/refresh`. El backend rota la sesión anterior y entrega nuevos tokens. Si el refresh token expiró, fue revocado o no coincide con su hash, la sesión se limpia y el usuario debe iniciar sesión otra vez.
+
+El CSRF token se firma con `CSRF_SECRET`, se guarda en la cookie legible `csrf_token` y debe repetirse en el header `X-CSRF-Token`. El backend compara ambos valores y valida su firma para las operaciones que modifican información.
+
+### Pruebas con Yaak y Postman
+
+Las colecciones utilizan el formato Postman Collection v2.1 y se pueden importar en Postman o Yaak:
 
 ```text
 docs/yaak/nutricommunity-auth.postman_collection.json
-```
-
-El entorno local se encuentra en:
-
-```text
+docs/yaak/nutricommunity-mvp.postman_collection.json
 docs/yaak/nutricommunity-local.postman_environment.json
 ```
 
-Para importarlos en Yaak:
+El nombre de la carpeta `docs/yaak` conserva la organización original del proyecto. Los archivos `.postman_collection.json` también son compatibles con Postman.
 
-1. Importa `nutricommunity-auth.postman_collection.json`.
-2. Importa `nutricommunity-mvp.postman_collection.json`.
-3. Importa el archivo de entorno en el mismo workspace.
-4. Activa `NutriCommunity - Local`.
-5. Inicia el backend con `pnpm dev` o `pnpm run compile`.
-6. Ejecuta `Register participant` o configura las credenciales del usuario administrador en `Login`.
-7. Copia el `accessToken` de la respuesta de login en la variable `access_token`.
-8. Copia el valor de la cookie `csrf_token` en la variable `csrf_token`.
+#### Configuración inicial
 
-La cookie `refresh_token` debe conservarse en el cookie jar de Yaak. Las solicitudes `Refresh token` y `Logout` requieren también el header `X-CSRF-Token`.
+1. Inicia el backend con `pnpm dev` o `pnpm run compile`.
+2. Importa las dos colecciones y el entorno `NutriCommunity - Local`.
+3. Activa el entorno en Yaak o Postman.
+4. Confirma que `base_url` sea `http://localhost:3000`.
+5. Habilita el almacenamiento de cookies del cliente HTTP.
+6. Ejecuta `Health check` para comprobar que la API responde.
+
+#### Flujo de autenticación
+
+1. Ejecuta `Login` con las credenciales de un usuario existente.
+2. Conserva la cookie `refresh_token` en el cookie jar.
+3. Copia el valor `accessToken` de la respuesta a `access_token`.
+4. Copia el valor de la cookie `csrf_token` a `csrf_token`.
+5. Ejecuta `Current user` para validar el access token y los roles.
+6. Ejecuta las solicitudes protegidas usando `Authorization: Bearer {{access_token}}`.
+7. Envía `X-CSRF-Token: {{csrf_token}}` en las solicitudes que modifican información.
+
+La solicitud `Refresh token` utiliza la cookie `refresh_token` y el header `X-CSRF-Token`. El backend rota la sesión, actualiza las cookies y devuelve un access token nuevo. Después de ejecutarla, actualiza `access_token` con el valor de la respuesta. Si la sesión expiró o fue revocada, ejecuta `Login` nuevamente.
+
+La solicitud `Logout` requiere el access token, el token CSRF y la cookie de refresh. Al terminar, el backend revoca la sesión y limpia las cookies.
+
+#### Orden recomendado para probar el MVP
+
+| Orden | Solicitud | Requisito |
+|---:|---|---|
+| 1 | `Health check` | Ninguno |
+| 2 | `Login` | Usuario existente |
+| 3 | `List content types` | Ninguno; copia un ID en `content_type_id` |
+| 4 | `List published posts` | Ninguno |
+| 5 | `Create post` | Access token y CSRF |
+| 6 | `Get post detail` | Copia el ID creado en `post_id` |
+| 7 | `Toggle post reaction` | Access token y CSRF |
+| 8 | `List post comments` | `post_id` |
+| 9 | `Create comment` | Access token y CSRF |
+| 10 | `List users` | Usuario con rol `admin` |
+| 11 | `Create user` | Usuario con rol `admin` y CSRF |
+| 12 | `Update user status` | `user_id`, rol `admin` y CSRF |
+| 13 | `Delete comment` o `Delete post` | ID correspondiente, autor o admin |
+| 14 | `Logout` | Access token, CSRF y cookie de refresh |
+
+Las solicitudes de creación, actualización y eliminación requieren `Content-Type: application/json` cuando envían cuerpo. Las respuestas más comunes son `200 OK`, `201 Created` y `204 No Content`. Un `400` indica datos inválidos, `401` una sesión o credencial inválida, `403` permisos o CSRF insuficientes, `404` un recurso inexistente y `409` un correo ya registrado.
 
 ### Rutas activas del MVP
 
@@ -280,28 +357,40 @@ Actualmente están implementadas estas rutas:
 | Método | Ruta | Acceso |
 |---|---|---|
 | GET | /health | Público |
-| POST | /api/auth/register | Público |
 | POST | /api/auth/login | Público |
 | GET | /api/auth/me | Usuario autenticado |
 | POST | /api/auth/refresh | Refresh token + CSRF |
 | POST | /api/auth/logout | JWT + CSRF |
+| GET | /api/content-types | Público |
 | GET | /api/posts | Público |
 | GET | /api/posts/:postId | Público; solo publicaciones `published` |
 | POST | /api/posts | Usuario autenticado + CSRF |
 | PATCH | /api/posts/:postId | Autor/admin + CSRF |
 | DELETE | /api/posts/:postId | Autor/admin + CSRF |
-| GET | /api/post/:postId/comments | Público |
+| GET | /api/post/:postId/comments?page=1&limit=10 | Público |
 | POST | /api/posts/:postId/comments | Usuario autenticado + CSRF |
 | DELETE | /api/comments/:commentId | Autor/admin + CSRF |
 | PUT | /api/posts/:postId/reaction | Usuario autenticado + CSRF |
 | GET | /api/admin/users | Admin |
+| POST | /api/admin/users | Admin + CSRF |
 | PATCH | /api/admin/users/:userId/status | Admin + CSRF |
 
-El plan detallado de implementación está en:
+El registro de participantes no es público. Se realiza desde el dashboard del administrador con `POST /api/admin/users`. La cuenta inicial del administrador se crea mediante el script SQL documentado en la sección de DBeaver.
 
-```text
-../plan-rutas-mvp.md
+Las publicaciones devuelven información legible del autor y del tipo de contenido:
+
+```json
+{
+  "authorName": "Ana López",
+  "contentTypeName": "Receta",
+  "title": "Ensalada de pollo",
+  "content": "Preparación de la receta"
+}
 ```
+
+Los comentarios se consultan de 10 en 10 y devuelven `authorName`, `body` y una propiedad `pagination.hasMore`. Para cargar más comentarios se incrementa el parámetro `page` sin eliminar los anteriores en el frontend.
+
+Las reacciones aceptan `like`, `love` y `amaze`. El usuario solo puede tener una reacción por publicación: una nueva reemplaza la anterior y repetir la misma reacción la elimina.
 
 Las tablas de recetas, ingredientes, nutrición, tags, preferencias y auditoría están preparadas para una segunda etapa, pero todavía no tienen endpoints implementados.
 
@@ -326,6 +415,69 @@ Las tablas de recetas, ingredientes, nutrición, tags, preferencias y auditoría
 - Docker Engine y Docker Compose V2.
 - DBeaver, opcional para inspeccionar PostgreSQL.
 - Yaak, opcional para probar la API.
+
+## Uso en Windows
+
+La opción recomendada en Windows es ejecutar el proyecto dentro de WSL2 con una distribución Linux. No necesitas Docker Desktop si instalas Docker Engine directamente dentro de WSL2; Docker Desktop con integración WSL2 también es una alternativa. Los comandos de Linux del resto de este documento deben ejecutarse dentro de WSL, no en `cmd.exe`.
+
+### WSL2
+
+Desde PowerShell como administrador:
+
+```powershell
+wsl --install
+```
+
+Después de reiniciar, abre la distribución instalada, clona el repositorio dentro del entorno Linux y ejecuta:
+
+```bash
+cd ~/turing/nutriCommunity_backend
+cp .env.example .env
+pnpm install
+pnpm run compile
+```
+
+Valida Docker desde WSL:
+
+```bash
+docker version
+docker compose version
+```
+
+### PowerShell
+
+Si ejecutas los comandos desde PowerShell, usa estas equivalencias:
+
+```powershell
+Copy-Item .env.example .env
+pnpm install
+pnpm run compile
+```
+
+Para generar secretos puedes usar OpenSSL desde WSL o Git Bash:
+
+```bash
+openssl rand -hex 32
+```
+
+Si no tienes OpenSSL disponible, usa Node.js:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Repite el comando para `JWT_SECRET`, `REFRESH_TOKEN_HMAC_SECRET` y `CSRF_SECRET`, usando un valor diferente para cada variable.
+
+### Puertos en Windows
+
+Desde el navegador y DBeaver se utilizan los puertos publicados en el host:
+
+```text
+Backend: http://localhost:3000
+PostgreSQL: localhost:5433
+```
+
+Dentro de Docker, el backend usa `db:5432` para conectarse a PostgreSQL y escucha internamente en el puerto `4000`.
 
 ## Instalación
 
@@ -387,8 +539,10 @@ REFRESH_TOKEN_HMAC_SECRET=genera_otro_secreto_largo_y_aleatorio
 REFRESH_TOKEN_EXPIRES_IN=7d
 CSRF_SECRET=genera_un_tercer_secreto_largo_y_aleatorio
 
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:4000
 ```
+
+Cuando ejecutas el backend directamente con `pnpm dev`, `PORT=3000` hace que la API escuche en `localhost:3000`. En Docker, `docker-compose.yml` sobrescribe el puerto interno con `4000` y publica `localhost:3000` mediante el mapeo `3000:4000`.
 
 Para generar secretos seguros, ejecuta el siguiente comando una vez por cada variable
 (`JWT_SECRET`, `REFRESH_TOKEN_HMAC_SECRET` y `CSRF_SECRET`):
@@ -516,24 +670,101 @@ Para crear el usuario administrador desde DBeaver, utiliza el script:
 docs/sql/create-admin.sql
 ```
 
-Reemplaza `REPLACE_WITH_A_STRONG_PASSWORD` antes de ejecutarlo.
+Antes de ejecutar el script, actualiza estos valores en el bloque `VALUES`:
+
+| Campo | Qué modificar |
+|---|---|
+| `first_name` | Primer nombre del administrador |
+| `second_name` | Segundo nombre o `NULL` |
+| `last_name` | Primer apellido |
+| `second_last_name` | Segundo apellido o `NULL` |
+| `email` | Correo con el que iniciarás sesión |
+| `REPLACE_WITH_A_STRONG_PASSWORD` | Contraseña real del administrador |
+
+La contraseña se genera con `pgcrypto` usando `bcrypt` y 14 rounds:
+
+```sql
+crypt('TU_CONTRASEÑA', gen_salt('bf', 14))
+```
+
+El script ejecuta `CREATE EXTENSION IF NOT EXISTS pgcrypto`, crea el rol `admin` si no existe y asigna ese rol al usuario. Si el correo ya existe, únicamente activa el usuario y conserva sus datos actuales; no reemplaza automáticamente su nombre ni su contraseña. Para cambiar una contraseña existente, ejecuta una actualización controlada:
+
+```sql
+UPDATE users
+SET password_hash = crypt('NUEVA_CONTRASEÑA', gen_salt('bf', 14)),
+    status = 'active',
+    updated_at = now()
+WHERE email = 'admin@nutricommunity.com';
+```
+
+Después de ejecutar el script, inicia sesión con el correo y la contraseña configurados. El usuario debe tener una fila relacionada en `user_roles` con el rol `admin`.
 
 ## Comandos del backend
 
+Los comandos se ejecutan desde la carpeta `nutriCommunity_backend` después de instalar las dependencias con `pnpm install`.
+
+### Desarrollo y compilación
+
 | Comando | Descripción |
 |---|---|
-| `pnpm dev` | Desarrollo con recarga automática |
-| `pnpm build` | Compila TypeScript a `dist/` |
-| `pnpm start` | Ejecuta la compilación |
-| `pnpm run compile` | Construye, recrea e inicia los contenedores y ejecuta las migraciones |
-| `pnpm typecheck` | Valida TypeScript |
-| `pnpm lint` | Ejecuta ESLint |
-| `pnpm lint:fix` | Corrige problemas compatibles |
-| `pnpm test` | Ejecuta Jest |
-| `pnpm db:generate` | Genera migraciones SQL |
-| `pnpm db:migrate` | Aplica migraciones pendientes |
-| `pnpm db:seed` | Carga datos iniciales |
-| `pnpm db:studio` | Abre Drizzle Studio |
+| `pnpm dev` | Inicia el backend en modo desarrollo con recarga automática. |
+| `pnpm build` | Compila TypeScript y genera los archivos en `dist/`. |
+| `pnpm start` | Ejecuta el backend compilado. Requiere haber ejecutado `pnpm build`. |
+| `pnpm run compile` | Construye las imágenes Docker, recrea e inicia los contenedores, ejecuta las migraciones y carga los datos iniciales. |
+
+`pnpm run compile` inicia PostgreSQL, el contenedor de migraciones y el backend. El contenedor `migrate` termina después de aplicar las migraciones y ejecutar el seed. El backend queda disponible en `http://localhost:3000` y PostgreSQL en `localhost:5433` desde el host.
+
+### Calidad del código
+
+| Comando | Descripción |
+|---|---|
+| `pnpm typecheck` | Valida los tipos de TypeScript sin generar archivos. |
+| `pnpm lint` | Ejecuta ESLint sobre el proyecto. |
+| `pnpm lint:fix` | Corrige automáticamente los problemas de ESLint que se puedan resolver. |
+
+### Pruebas generales
+
+| Comando | Descripción |
+|---|---|
+| `pnpm test` | Ejecuta todas las pruebas una vez. |
+| `pnpm test:watch` | Ejecuta Jest en modo observación y repite las pruebas cuando cambian los archivos. |
+| `pnpm test:coverage` | Ejecuta todas las pruebas y genera el reporte de cobertura. |
+| `pnpm test:ci` | Ejecuta las pruebas con cobertura en modo CI. |
+
+### Pruebas por módulo
+
+| Comando | Descripción |
+|---|---|
+| `pnpm test:schemas` | Prueba los schemas de validación. |
+| `pnpm test:tokens` | Prueba la creación y validación de tokens. |
+| `pnpm test:middlewares` | Prueba los middlewares de autenticación, autorización, cookies y CSRF. |
+| `pnpm test:services` | Prueba los servicios de la aplicación. |
+| `pnpm test:http` | Prueba los controladores HTTP. |
+| `pnpm test:auth` | Ejecuta las pruebas relacionadas con autenticación, tokens y CSRF. |
+| `pnpm test:posts` | Ejecuta las pruebas de publicaciones. |
+| `pnpm test:comments` | Ejecuta las pruebas de comentarios. |
+| `pnpm test:reactions` | Ejecuta las pruebas de reacciones. |
+| `pnpm test:admin` | Ejecuta las pruebas administrativas. |
+
+### Cobertura por módulo
+
+| Comando | Descripción |
+|---|---|
+| `pnpm test:coverage:auth` | Genera cobertura de autenticación, tokens, CSRF, middleware y controlador de autenticación. |
+| `pnpm test:coverage:controllers` | Genera cobertura de los controladores HTTP. |
+| `pnpm test:coverage:services` | Genera cobertura de los servicios y tokens. |
+| `pnpm test:coverage:schemas` | Genera cobertura de los schemas de validación. |
+
+### Base de datos
+
+| Comando | Descripción |
+|---|---|
+| `pnpm db:generate` | Genera una nueva migración SQL a partir de los cambios en los schemas de Drizzle. |
+| `pnpm db:migrate` | Aplica las migraciones pendientes usando `DATABASE_URL`. |
+| `pnpm db:seed` | Carga o actualiza los datos iniciales. |
+| `pnpm db:studio` | Abre Drizzle Studio para inspeccionar la base de datos. |
+
+Después de modificar un schema, ejecuta `pnpm db:generate` y luego `pnpm db:migrate`. Si trabajas con Docker, `pnpm run compile` ejecuta el flujo de migración y seed automáticamente.
 
 ## Estructura
 

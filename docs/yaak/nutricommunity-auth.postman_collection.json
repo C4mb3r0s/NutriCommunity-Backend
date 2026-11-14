@@ -24,38 +24,6 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Register participant",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Ana\",\n  \"secondName\": \"María\",\n  \"lastName\": \"López\",\n  \"secondLastName\": \"García\",\n  \"email\": \"ana@example.com\",\n  \"password\": \"UnaClaveSegura123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/api/auth/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "register"
-              ]
-            }
-          }
-        },
-        {
           "name": "Login",
           "request": {
             "method": "POST",

@@ -53,6 +53,22 @@
       ]
     },
     {
+      "name": "Content types",
+      "item": [
+        {
+          "name": "List content types",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/content-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "content-types"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Posts",
       "item": [
         {
@@ -216,6 +232,27 @@
     {
       "name": "Admin",
       "item": [
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "X-CSRF-Token", "value": "{{csrf_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Ana\",\n  \"secondName\": \"María\",\n  \"lastName\": \"López\",\n  \"secondLastName\": \"García\",\n  \"email\": \"ana@example.com\",\n  \"password\": \"UnaClaveSegura123!\"\n}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"]
+            }
+          }
+        },
         {
           "name": "List users",
           "request": {
