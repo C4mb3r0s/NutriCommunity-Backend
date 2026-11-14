@@ -35,13 +35,20 @@ async function seed (): Promise<void> {
 
   for (const contentType of contentTypeValues) {
     const existingContentType = await db
-      .select({ id: contentTypes.id })
+      .select({ id: contentTypes.id, name: contentTypes.name })
       .from(contentTypes)
       .where(eq(contentTypes.code, contentType.code))
       .limit(1)
 
-    if (existingContentType.length === 0) {
+    const existing = existingContentType[0]
+
+    if (!existing) {
       await db.insert(contentTypes).values(contentType)
+    } else if (existing.name !== contentType.name) {
+      await db
+        .update(contentTypes)
+        .set({ name: contentType.name })
+        .where(eq(contentTypes.code, contentType.code))
     }
   }
 

@@ -51,6 +51,7 @@ const adminController = await import('../../src/controllers/admin.controller.js'
 const postController = await import('../../src/controllers/post.controller.js')
 const commentController = await import('../../src/controllers/comment.controller.js')
 const reactionController = await import('../../src/controllers/reaction.controller.js')
+const contentTypeController = await import('../../src/controllers/content-type.controller.js')
 const app = (await import('../../src/app.js')).default
 
 const postId = '550e8400-e29b-41d4-a716-446655440000'
@@ -331,6 +332,20 @@ describe('post controllers', () => {
       params: { postId }, user: { id: userId, roles: ['admin'] }
     }), missingRemoveResponse as unknown as Response)
     expect(missingRemoveResponse.status).toHaveBeenCalledWith(404)
+  })
+})
+
+describe('content type controllers', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('returns the available content types', async () => {
+    const contentTypes = [{ id: postId, code: 'recipe', name: 'Receta' }]
+    contentTypeService.list.mockResolvedValue(contentTypes)
+    const response = createResponse()
+
+    await contentTypeController.list(requestWith({}), response as unknown as Response)
+
+    expect(response.json).toHaveBeenCalledWith(contentTypes)
   })
 })
 
