@@ -26,7 +26,18 @@ export const updateUserStatus = async (
     return
   }
 
-  const user = await adminService.updateUserStatus(userId, status)
+  let user
+
+  try {
+    user = await adminService.updateUserStatus(userId, status)
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ADMIN_USER_PROTECTED') {
+      response.status(403).json({ message: 'Administrator users cannot be modified' })
+      return
+    }
+
+    throw error
+  }
 
   if (!user) {
     response.status(404).json({ message: 'User not found' })

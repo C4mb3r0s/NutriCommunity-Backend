@@ -13,7 +13,6 @@ const authRateLimit = rateLimit({
   legacyHeaders: false
 })
 
-router.post('/register', authRateLimit, authController.register)
 router.post('/login', authRateLimit, authController.login)
 router.get('/me', authenticate, authController.me)
 router.post('/refresh', requireCsrf, authController.refresh)
