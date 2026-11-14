@@ -1,18 +1,36 @@
-# Dependencias locales; se instalarán dentro de la imagen.
-node_modules
+# Git and local repository metadata.
+.git/
+.gitignore
+.github/
 
-# Código compilado localmente.
-dist
+# Dependencies and generated build artifacts.
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+*.tsbuildinfo
 
-# Secretos y variables de entorno locales.
+# Local environment files and secrets.
 .env
 .env.*
 !.env.example
+secrets/
+*.secret
+*.secret.*
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
 
-# Archivos de Git.
-.git
-.gitignore
-
-# Logs y resultados de pruebas.
+# Local tools, logs, and temporary files.
+.cache/
+.eslintcache
+.vite/
+tmp/
+temp/
 *.log
-coverage
+*.swp
+*.swo
+*.orig

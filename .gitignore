@@ -1,6 +1,8 @@
 node_modules/
+.pnpm-store/
 dist/
 coverage/
+*.tsbuildinfo
 
 # Environment files and local secrets.
 .env
@@ -29,12 +31,18 @@ yarn-error.log*
 .cache/
 .eslintcache
 .turbo/
+.vite/
 tmp/
 temp/
 *.tmp
 *.swp
 *.swo
+*.orig
 
 # Operating-system files.
 .DS_Store
 Thumbs.db
+
+# Local database and Docker artifacts.
+postgres_data/
+.docker/
