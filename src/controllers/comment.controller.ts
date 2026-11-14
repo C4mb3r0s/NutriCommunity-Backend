@@ -2,7 +2,8 @@ import type { Request, Response } from 'express'
 import {
   commentIdSchema,
   commentParamsSchema,
-  createCommentSchema
+  createCommentSchema,
+  listCommentsSchema
 } from '../schemas/comment.schema.js'
 import * as commentService from '../services/comment.service.js'
 
@@ -11,7 +12,8 @@ export const list = async (
   response: Response
 ): Promise<void> => {
   const { postId } = commentParamsSchema.parse(request.params)
-  response.json({ data: await commentService.listByPost(postId) })
+  const { page, limit } = listCommentsSchema.parse(request.query ?? {})
+  response.json(await commentService.listByPost(postId, page, limit))
 }
 
 export const create = async (

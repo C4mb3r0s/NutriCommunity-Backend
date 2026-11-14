@@ -356,7 +356,7 @@ describe('comment and reaction controllers', () => {
     commentService.listByPost.mockResolvedValue([])
     const listResponse = createResponse()
     await commentController.list(requestWith({ params: { postId } }), listResponse as unknown as Response)
-    expect(listResponse.json).toHaveBeenCalledWith({ data: [] })
+    expect(listResponse.json).toHaveBeenCalledWith([])
 
     commentService.create.mockResolvedValue({ id: commentId })
     const createResponseValue = createResponse()

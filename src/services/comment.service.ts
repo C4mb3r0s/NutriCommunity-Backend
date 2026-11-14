@@ -1,17 +1,89 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, count, eq } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { comments } from '../db/schema/comments.js'
 import { posts } from '../db/schema/posts.js'
+import { users } from '../db/schema/users.js'
 
-export const listByPost = async (postId: string) => {
-  return db
-    .select()
+type CommentRow = {
+  id: string
+  postId: string
+  userId: string
+  body: string
+  status: string
+  createdAt: Date
+  updatedAt: Date
+  firstName: string
+  secondName: string | null
+  lastName: string
+  secondLastName: string | null
+}
+
+const toCommentView = (comment: CommentRow) => ({
+  id: comment.id,
+  postId: comment.postId,
+  userId: comment.userId,
+  authorName: [
+    comment.firstName,
+    comment.secondName,
+    comment.lastName,
+    comment.secondLastName
+  ].filter(Boolean).join(' '),
+  body: comment.body,
+  createdAt: comment.createdAt,
+  updatedAt: comment.updatedAt
+})
+
+export const listByPost = async (
+  postId: string,
+  page = 1,
+  limit = 10
+) => {
+  const offset = (page - 1) * limit
+  const whereCondition = and(
+    eq(comments.postId, postId),
+    eq(comments.status, 'active'),
+    eq(posts.status, 'published')
+  )
+
+  const data = await db
+    .select({
+      id: comments.id,
+      postId: comments.postId,
+      userId: comments.userId,
+      body: comments.body,
+      status: comments.status,
+      createdAt: comments.createdAt,
+      updatedAt: comments.updatedAt,
+      firstName: users.firstName,
+      secondName: users.secondName,
+      lastName: users.lastName,
+      secondLastName: users.secondLastName
+    })
     .from(comments)
-    .where(and(
-      eq(comments.postId, postId),
-      eq(comments.status, 'active')
-    ))
+    .innerJoin(users, eq(comments.userId, users.id))
+    .innerJoin(posts, eq(comments.postId, posts.id))
+    .where(whereCondition)
     .orderBy(asc(comments.createdAt))
+    .limit(limit)
+    .offset(offset)
+
+  const countResult = await db
+    .select({ total: count() })
+    .from(comments)
+    .innerJoin(posts, eq(comments.postId, posts.id))
+    .where(whereCondition)
+
+  const totalComments = Number(countResult[0]?.total ?? 0)
+
+  return {
+    data: data.map((comment) => toCommentView(comment as CommentRow)),
+    pagination: {
+      page,
+      limit,
+      total: totalComments,
+      hasMore: offset + data.length < totalComments
+    }
+  }
 }
 
 export const create = async (
