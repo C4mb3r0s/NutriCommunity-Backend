@@ -3,6 +3,11 @@ import 'dotenv/config'
 import express, { type Express } from 'express'
 import helmet from 'helmet'
 import { parseCookies } from './middlewares/cookies.js'
+import {
+  sendOpenApiDocument,
+  sendSwaggerUi,
+  swaggerEnabled
+} from './docs/swagger.js'
 import adminRoutes from './routes/admin.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import commentRoutes from './routes/comment.routes.js'
@@ -10,6 +15,11 @@ import contentTypeRoutes from './routes/content-type.routes.js'
 import postRoutes from './routes/post.routes.js'
 
 const app: Express = express()
+
+if (swaggerEnabled()) {
+  app.get('/api-docs', sendSwaggerUi)
+  app.get('/api-docs/openapi.json', sendOpenApiDocument)
+}
 
 app.use(helmet())
 app.use(cors({

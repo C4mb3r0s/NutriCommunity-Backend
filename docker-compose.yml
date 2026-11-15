@@ -50,6 +50,7 @@ services:
     command: pnpm start
     environment:
       NODE_ENV: ${NODE_ENV}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED}
       # The API listens on port 4000 inside the container.
       PORT: 4000
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}

@@ -20,6 +20,7 @@ El backend proporciona autenticación segura, publicaciones, comentarios, reacci
 
 - [Arquitectura](#arquitectura)
 - [Contrato de la API](#contrato-de-la-api)
+- [Swagger / OpenAPI](#swagger--openapi)
 - [Pruebas con Yaak y Postman](#pruebas-con-yaak-y-postman)
 - [Instalación](#instalación)
 - [Docker](#docker)
@@ -357,6 +358,8 @@ Actualmente están implementadas estas rutas:
 | Método | Ruta | Acceso |
 |---|---|---|
 | GET | /health | Público |
+| GET | /api-docs | Documentación Swagger en desarrollo |
+| GET | /api-docs/openapi.json | Especificación OpenAPI en desarrollo |
 | POST | /api/auth/login | Público |
 | GET | /api/auth/me | Usuario autenticado |
 | POST | /api/auth/refresh | Refresh token + CSRF |
@@ -394,6 +397,36 @@ Las reacciones aceptan `like`, `love` y `amaze`. El usuario solo puede tener una
 
 Las tablas de recetas, ingredientes, nutrición, tags, preferencias y auditoría están preparadas para una segunda etapa, pero todavía no tienen endpoints implementados.
 
+## Swagger / OpenAPI
+
+La documentación interactiva de la API está disponible en:
+
+```text
+http://localhost:3000/api-docs
+```
+
+La especificación OpenAPI en formato JSON se encuentra en:
+
+```text
+http://localhost:3000/api-docs/openapi.json
+```
+
+Para habilitarla en desarrollo, utiliza:
+
+```env
+SWAGGER_ENABLED=true
+```
+
+Swagger documenta las rutas del MVP, los cuerpos JSON, los parámetros, las respuestas y los esquemas de seguridad. Para probar rutas protegidas:
+
+1. Ejecuta `POST /api/auth/login` desde Swagger, Yaak o Postman.
+2. Copia el valor `accessToken` de la respuesta.
+3. Presiona `Authorize` en Swagger y escribe `Bearer <accessToken>`.
+4. Conserva las cookies `refresh_token` y `csrf_token` en el cliente.
+5. Copia el valor de `csrf_token` en el header `X-CSRF-Token` cuando la operación lo requiera.
+
+La interfaz de Swagger carga sus recursos visuales desde `swagger-ui-dist` mediante CDN. El backend conserva localmente la especificación OpenAPI y no expone la documentación cuando `NODE_ENV=production`, salvo que se habilite explícitamente con `SWAGGER_ENABLED=true`.
+
 ## Dependencias de producción
 
 - Express 5.
@@ -413,6 +446,7 @@ Las tablas de recetas, ingredientes, nutrición, tags, preferencias y auditoría
 - pnpm.
 - PostgreSQL 16 mediante Docker.
 - Docker Engine y Docker Compose V2.
+- Swagger UI mediante la interfaz local de OpenAPI.
 - DBeaver, opcional para inspeccionar PostgreSQL.
 - Yaak, opcional para probar la API.
 
@@ -529,6 +563,7 @@ Configuración mínima para Docker:
 ```env
 NODE_ENV=development
 PORT=3000
+SWAGGER_ENABLED=true
 POSTGRES_DB=nutricommunity
 POSTGRES_USER=nutricommunity_user
 POSTGRES_PASSWORD=cambia_esta_contraseña
@@ -787,6 +822,9 @@ nutricommunity_backend/
 ├── package.json
 ├── pnpm-lock.yaml
 ├── src/
+│   ├── docs/
+│   │   ├── openapi.ts
+│   │   └── swagger.ts
 │   ├── controllers/
 │   │   ├── admin.controller.ts
 │   │   ├── auth.controller.ts
